@@ -1,0 +1,21 @@
+---
+interface Props {
+  href: string;
+  title: string;
+  desc: string;
+  meta: string;
+  vtName?: string;
+}
+
+const { href, title, desc, meta, vtName } = Astro.props;
+---
+
+<a
+  class="index-row pressable"
+  href={href}
+  style={vtName ? `view-transition-name: ${vtName}` : undefined}
+>
+  <span class="index-row-title">{title}</span>
+  <span class="index-row-desc">{desc}</span>
+  <span class="index-row-meta">{meta}</span>
+</a>

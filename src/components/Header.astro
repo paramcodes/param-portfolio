@@ -1,0 +1,77 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+
+const nav = [
+  { href: '/work/', label: 'work' },
+  { href: '/writing/', label: 'writing' },
+  { href: '/about/', label: 'about' },
+];
+---
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a href="/" class="wordmark pressable">param</a>
+    <nav class="header-nav" aria-label="Primary">
+      {nav.map((item) => <a class="nav-link" href={item.href}>{item.label}</a>)}
+    </nav>
+    <button
+      class="cmdk-button pressable"
+      type="button"
+      data-cmdk-open
+      aria-label="Open command menu"
+    >
+      <span class="mono" aria-hidden="true">&#8984;K</span>
+    </button>
+    <ThemeToggle />
+  </div>
+</header>
+
+<style>
+  .site-header {
+    padding-block: 1rem;
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .wordmark {
+    font-weight: 500;
+    font-size: 0.9375rem;
+    letter-spacing: 0.01em;
+    margin-right: auto;
+  }
+
+  .nav-link {
+    font-size: 0.8125rem;
+    color: var(--muted);
+    transition: color 200ms ease;
+  }
+
+  .header-nav {
+    display: flex;
+    gap: 1.4rem;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .nav-link:hover {
+      color: var(--text);
+    }
+  }
+
+  .cmdk-button {
+    border: 1px solid var(--pill-border);
+    border-radius: 8px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+
+  @media (max-width: 720px) {
+    .header-nav {
+      display: none;
+    }
+  }
+</style>

@@ -1,0 +1,62 @@
+---
+import '@fontsource-variable/inter';
+import '@fontsource-variable/jetbrains-mono';
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import CommandPalette from '../components/CommandPalette.astro';
+import { getCollection } from 'astro:content';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Paramveer Singh — backend-first engineer building AI systems & backends that ship." } = Astro.props;
+
+const work = await getCollection('work');
+const writing = (await getCollection('writing')).filter((p) => !p.data.draft);
+
+const paletteItems = [
+  { href: '/', title: 'home', kind: 'page' },
+  { href: '/work', title: 'work — archive', kind: 'page' },
+  { href: '/writing', title: 'writing', kind: 'page' },
+  { href: '/about', title: 'about', kind: 'page' },
+  ...work.map((entry) => ({ href: `/work/${entry.id}/`, title: entry.data.title, kind: 'project' })),
+  ...writing.map((entry) => ({ href: `/writing/${entry.id}/`, title: entry.data.title, kind: 'post' })),
+];
+---
+
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content="/og.png" />
+    <meta property="og:type" content="website" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" type="application/rss+xml" title="param — writing" href="/rss.xml" />
+    <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    <script is:inline>
+      // theme before first paint; ?theme= override exists for testing
+      (function () {
+        var override = new URLSearchParams(location.search).get('theme');
+        var stored = localStorage.getItem('theme');
+        var theme = override || stored || 'dark';
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+  </head>
+  <body>
+    <Header />
+    <main id="main">
+      <slot />
+    </main>
+    <Footer />
+    <CommandPalette items={paletteItems} />
+  </body>
+</html>

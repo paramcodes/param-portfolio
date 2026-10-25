@@ -1,0 +1,33 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="404 — param">
+  <section class="container lost">
+    <p class="mono-label">404</p>
+    <h1 class="lost-title">nothing here.</h1>
+    <p class="lost-support">
+      The dragon roams a 400-unit box and still found the edge faster than you.
+      <a class="text-link" href="/">back home</a>
+    </p>
+  </section>
+</Base>
+
+<style>
+  .lost {
+    padding-top: 8rem;
+    padding-bottom: 10rem;
+  }
+
+  .lost-title {
+    margin-top: 0.8rem;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+
+  .lost-support {
+    margin-top: 1rem;
+    color: var(--muted);
+  }
+</style>

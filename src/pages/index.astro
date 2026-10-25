@@ -1,0 +1,140 @@
+---
+import Base from '../layouts/Base.astro';
+import Dragon from '../components/Dragon.astro';
+import WorkRow from '../components/WorkRow.astro';
+import { getCollection } from 'astro:content';
+
+const featured = (await getCollection('work'))
+  .filter((entry) => entry.data.featured)
+  .sort((a, b) => a.data.order - b.data.order);
+
+const posts = (await getCollection('writing'))
+  .filter((post) => !post.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const fmt = (date: Date) =>
+  date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }).toLowerCase();
+---
+
+<Base title="param — AI systems & backends that ship">
+  <section class="hero">
+    <Dragon />
+    <div class="container hero-inner">
+      <p class="hero-meta mono">
+        backend-first engineer, agentic ai &#8212; durgapur, in
+        <span class="status"><span class="dot" aria-hidden="true"></span>open to internships &#38; freelance</span>
+      </p>
+      <h1 class="hero-title">AI systems &#38; backends<br />that ship.</h1>
+      <p class="hero-support">
+        I&#8217;m Paramveer &#8212; the unglamorous parts done right: provenance, evals, observability, infra as code.
+      </p>
+    </div>
+  </section>
+
+  <section class="container home-section">
+    <hr class="section-rule" />
+    <p class="section-label">selected work</p>
+    <div class="index-list">
+      {
+        featured.map((entry) => (
+          <WorkRow
+            href={`/work/${entry.id}/`}
+            title={entry.data.title.toLowerCase()}
+            desc={entry.data.summary}
+            meta={String(entry.data.year)}
+            vtName={`work-${entry.id}`}
+          />
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="container home-section">
+    <hr class="section-rule" />
+    <p class="section-label">writing</p>
+    <div class="index-list">
+      {
+        posts.map((post) => (
+          <WorkRow
+            href={`/writing/${post.id}/`}
+            title={post.data.title.toLowerCase()}
+            desc={post.data.description}
+            meta={fmt(post.data.pubDate)}
+          />
+        ))
+      }
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    position: relative;
+    min-height: 450px;
+  }
+
+  .hero-inner {
+    position: relative;
+    z-index: 1;
+    padding-top: 5.5rem;
+  }
+
+  .hero-meta {
+    font-size: 0.7813rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  .status {
+    margin-left: 1.1em;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--green);
+    margin-right: 0.55em;
+  }
+
+  .hero-title {
+    font-size: clamp(2.75rem, 8.5vw, 4.25rem);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    line-height: 1.24;
+    margin-top: 2.2rem;
+    text-wrap: balance;
+  }
+
+  .hero-support {
+    margin-top: 1.6rem;
+    font-size: 1rem;
+    color: var(--muted);
+    max-width: 56ch;
+  }
+
+  .home-section {
+    margin-top: 2.2rem;
+  }
+
+  .index-list {
+    margin-top: 0.5rem;
+  }
+
+  @media (max-width: 720px) {
+    .hero {
+      min-height: 400px;
+    }
+
+    .hero-inner {
+      padding-top: 3rem;
+    }
+
+    .status {
+      display: block;
+      margin-left: 0;
+      margin-top: 0.35em;
+    }
+  }
+</style>

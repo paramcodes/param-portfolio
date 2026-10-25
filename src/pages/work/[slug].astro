@@ -1,0 +1,102 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('work');
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, summary, year, tags, repo, demo } = entry.data;
+---
+
+<Base title={`${title} — param`} description={summary}>
+  <article class="container detail">
+    <header style={`view-transition-name: work-${entry.id}`}>
+      <p class="back mono"><a class="text-link" href="/work/">all work</a></p>
+      <h1 class="detail-title">{title.toLowerCase()}</h1>
+      <p class="detail-summary">{summary}</p>
+      <p class="detail-meta mono">
+        <span>{year}</span>
+        {tags.length > 0 && <span class="meta-sep" aria-hidden="true">&#183;</span>}
+        <span>{tags.join(', ')}</span>
+      </p>
+      {
+        (repo || demo) && (
+          <p class="detail-links">
+            {repo && (
+              <a class="text-link" href={repo} target="_blank" rel="noopener noreferrer">
+                source
+              </a>
+            )}
+            {demo && (
+              <a class="text-link" href={demo} target="_blank" rel="noopener noreferrer">
+                live demo
+              </a>
+            )}
+          </p>
+        )
+      }
+    </header>
+    <hr class="section-rule" />
+    <div class="prose detail-body">
+      <Content />
+    </div>
+  </article>
+</Base>
+
+<style>
+  .detail {
+    padding-top: 4.5rem;
+  }
+
+  .back {
+    font-size: 0.7813rem;
+  }
+
+  .detail-title {
+    margin-top: 1.4rem;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+
+  .detail-summary {
+    margin-top: 0.9rem;
+    color: var(--muted);
+    font-size: 1.0625rem;
+    max-width: 52ch;
+  }
+
+  .detail-meta {
+    margin-top: 1.1rem;
+    font-size: 0.7813rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  .meta-sep {
+    margin-inline: 0.6em;
+  }
+
+  .detail-links {
+    margin-top: 0.9rem;
+    display: flex;
+    gap: 1.4rem;
+    font-size: 0.9063rem;
+  }
+
+  .section-rule {
+    margin-top: 2.2rem;
+  }
+
+  .detail-body {
+    margin-top: 2rem;
+    padding-bottom: 3rem;
+  }
+</style>

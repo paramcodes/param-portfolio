@@ -1,0 +1,224 @@
+---
+// One-formula particle dragon, reimplemented from the parametric point
+// technique. Zero libraries, zero assets. Runs at 30fps, pauses when
+// scrolled off-screen, renders a single static frame under reduced motion.
+---
+
+<button
+  class="dragon-band"
+  type="button"
+  data-dragon
+  aria-label="Morph the hero animation between its four presets"
+>
+  <canvas class="dragon-canvas" data-dragon-canvas aria-hidden="true"></canvas>
+  <span class="dragon-label" data-dragon-label aria-hidden="true">cocoon 01/04</span>
+</button>
+
+<style>
+  .dragon-band {
+    cursor: pointer;
+  }
+</style>
+
+<script>
+  const band = document.querySelector<HTMLElement>('[data-dragon]');
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-dragon-canvas]');
+
+  if (band && canvas) {
+    const label = band.querySelector<HTMLElement>('[data-dragon-label]');
+    const ctx = canvas.getContext('2d');
+
+    if (label && ctx) {
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const visible = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+      const BASE: Record<string, number> = {
+        AMP: 4, WIND: 35, VS: 7, VO: 13, QA: 2, QF: 3, SP: 35, TH: 9,
+        ORB: 40, YS: 35, PD: 9, PSP: 2, WV: 9, WSP: 2, DOF: 4,
+        RF: 9, DPH: 2, CX: 200, CY: 0, DENS: 235,
+      };
+
+      const PRESETS = [
+        { name: 'cocoon', zoom: 1.1, offY: -105, v: { WIND: 14.5, AMP: 2.6, TH: 14.2, SP: 70, ORB: 22, YS: 52, RF: 4.2, DENS: 150 } },
+        { name: 'original', zoom: 1.12, offY: -60, v: {} },
+        { name: 'storm', zoom: 1.0, offY: -30, v: { PD: 2.4, PSP: 4.2, WV: 2.8, RF: 19, DPH: -3.4, WIND: 48, DENS: 110 } },
+        { name: 'wing', zoom: 1.2, offY: -40, v: { AMP: 7.18, WIND: 47.39, VS: 16.24, VO: 28.23, QA: 3.58, QF: 5.84, SP: 38.57, TH: 12.2, ORB: 25.09, YS: 10.8, PD: 15.4, PSP: 3.23, WV: 12.94, WSP: 1.19, DOF: 8.59, RF: 10.94, DPH: 0.79, CX: 205, CY: -5 } },
+      ];
+
+      const POINTS = 4800;
+      const SRC = 6000 / POINTS;
+      const MORPH_MS = 2400;
+      const HOLD_MS = 12000;
+
+      let width = 0;
+      let height = 0;
+      let t = 4.0;
+      let index = 0;
+      let morphFrom: ReturnType<typeof merge> | null = null;
+      let morphTo: ReturnType<typeof merge> | null = null;
+      let morphStart = 0;
+      let lastMorph = performance.now();
+      let lastFrame = 0;
+      let running = false;
+      let px = 0, py = 0, pxT = 0, pyT = 0;
+      let colorText = '#eae6dd';
+      let colorAccent = '#d9a05b';
+
+      function updateColors() {
+        const styles = getComputedStyle(document.documentElement);
+        colorText = styles.getPropertyValue('--text').trim() || colorText;
+        colorAccent = styles.getPropertyValue('--accent').trim() || colorAccent;
+      }
+
+      // colors are cached; re-read only when the theme attribute flips
+      new MutationObserver(updateColors).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['data-theme'],
+      });
+      updateColors();
+
+      function merge(preset: (typeof PRESETS)[number]) {
+        const out: { zoom: number; offY: number; v: Record<string, number> } = {
+          zoom: preset.zoom,
+          offY: preset.offY,
+          v: {},
+        };
+        for (const k in BASE) out.v[k] = k in preset.v ? preset.v[k] : BASE[k];
+        return out;
+      }
+
+      let cur = merge(PRESETS[0]);
+
+      function resize() {
+        const r = band.getBoundingClientRect();
+        if (r.width < 2) return;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        width = r.width;
+        height = r.height;
+        canvas.width = Math.round(width * dpr);
+        canvas.height = Math.round(height * dpr);
+        ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+        if (reduced) draw(performance.now());
+      }
+
+      const ro = new ResizeObserver(() => {
+        resize();
+      });
+      ro.observe(band);
+      resize();
+
+      if (visible) {
+        window.addEventListener('pointermove', (e) => {
+          const r = band.getBoundingClientRect();
+          pxT = ((e.clientX - r.left) / r.width - 0.5) * 30;
+          pyT = ((e.clientY - r.top) / r.height - 0.5) * 14;
+        });
+        window.addEventListener('pointerleave', () => {
+          pxT = 0;
+          pyT = 0;
+        });
+      }
+
+      // pause the loop entirely while the hero is off-screen
+      new IntersectionObserver(([entry]) => {
+        if (!entry) return;
+        if (entry.isIntersecting && !reduced && !running) {
+          running = true;
+          lastFrame = 0;
+          requestAnimationFrame(loop);
+        } else if (!entry.isIntersecting) {
+          running = false;
+        }
+      }).observe(band);
+
+      function updateLabel() {
+        label.textContent = `${PRESETS[index].name} 0${index + 1}/04`;
+      }
+
+      function morphToPreset(next: number, now: number) {
+        index = next % PRESETS.length;
+        morphFrom = JSON.parse(JSON.stringify(cur));
+        morphTo = merge(PRESETS[index]);
+        morphStart = now;
+        updateLabel();
+      }
+
+      function easeInOut(p: number) {
+        return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+      }
+
+      function stepMorph(now: number) {
+        if (!morphTo || !morphFrom) return;
+        const p = Math.min(1, (now - morphStart) / MORPH_MS);
+        const e = easeInOut(p);
+        cur.zoom = morphFrom.zoom + (morphTo.zoom - morphFrom.zoom) * e;
+        cur.offY = morphFrom.offY + (morphTo.offY - morphFrom.offY) * e;
+        for (const k in cur.v) cur.v[k] = morphFrom.v[k] + (morphTo.v[k] - morphFrom.v[k]) * e;
+        if (p >= 1) {
+          morphTo = null;
+          morphFrom = null;
+        }
+      }
+
+      function draw(now: number) {
+        ctx!.clearRect(0, 0, width, height);
+        const v = cur.v;
+        const scale = Math.min(width / 400, height / 400) * cur.zoom;
+        const rt = now / 1000;
+        const drift = reduced ? 0 : Math.sin(rt * 0.21) * width * 0.17 + px;
+        const bob = reduced ? 0 : Math.sin(rt * 0.13 + 1.2) * height * 0.06 + py;
+        const originX = (width - 400 * scale) / 2 + drift;
+        const originY = (height - 400 * scale) / 2 + bob;
+
+        for (let i = POINTS; i--;) {
+          const si = i * SRC;
+          const y = si / v.DENS;
+          const k = (v.AMP + Math.cos(si / v.PD - t * v.PSP)) * Math.cos(si / v.WIND);
+          const e = y / v.VS - v.VO;
+          const dist = Math.hypot(k, e) + Math.sin(e / v.WV + t / v.WSP) - v.DOF;
+          const q = v.QA * Math.sin(k * v.QF) - (y / v.SP) * k * (v.TH + k * Math.sin(Math.cos(e) * v.RF - dist * v.DPH + t));
+          const ang = dist - t;
+          const sx = q + v.ORB * Math.cos(ang) + v.CX;
+          const sy = q * Math.sin(ang) + dist * v.YS + v.CY;
+          const x = originX + sx * scale;
+          const yy = originY + (sy + cur.offY) * scale;
+          if (x < 0 || x > width || yy < 0 || yy > height) continue;
+          ctx!.globalAlpha = i % 13 === 0 ? 0.48 : 0.27;
+          ctx!.fillStyle = i % 19 === 0 ? colorAccent : colorText;
+          const s = i % 29 === 0 ? 1.3 : 0.8;
+          ctx!.fillRect(x, yy, s, s);
+        }
+        ctx!.globalAlpha = 1;
+      }
+
+      function loop(now: number) {
+        if (!running) return;
+        if (now - lastFrame >= 33) {
+          const dt = lastFrame ? Math.min(0.1, (now - lastFrame) / 1000) : 0;
+          lastFrame = now;
+          if (!morphTo && now - lastMorph > HOLD_MS) {
+            morphToPreset(index + 1, now);
+            lastMorph = now;
+          }
+          stepMorph(now);
+          px += (pxT - px) * 0.06;
+          py += (pyT - py) * 0.06;
+          t += 1.05 * dt;
+          draw(now);
+        }
+        requestAnimationFrame(loop);
+      }
+
+      band.addEventListener('click', () => {
+        morphToPreset(index + 1, performance.now());
+        lastMorph = performance.now();
+        if (!reduced) {
+          canvas.animate?.([{ opacity: 0.25 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
+        }
+      });
+
+      updateLabel();
+      if (reduced) draw(performance.now());
+    }
+  }
+</script>

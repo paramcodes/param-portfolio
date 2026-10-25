@@ -1,0 +1,126 @@
+---
+import Base from '../layouts/Base.astro';
+import WorkRow from '../components/WorkRow.astro';
+
+const proof = [
+  {
+    title: 'gssoc \u201924',
+    desc: 'project admin \u2014 led 50+ contributors, merged 50+ prs, zero-downtime deploys',
+    meta: '2024',
+  },
+  {
+    title: 'problem solving',
+    desc: '500+ dsa problems \u2014 leetcode peak 1459, codechef 1300',
+    meta: 'ongoing',
+  },
+  {
+    title: 'b.tech, computer science',
+    desc: 'bengal college of engineering and technology',
+    meta: '2023\u2013',
+  },
+];
+
+const services = [
+  { title: 'backend engineering', desc: 'node/fastify/express/django, postgres/mongodb/pgvector' },
+  { title: 'ai agents & rag', desc: 'pipelines that survive production \u2014 evals, provenance, citations' },
+  { title: 'devops & cloud', desc: 'aws, terraform, github actions, prometheus/grafana' },
+  { title: 'full-stack apps', desc: 'next.js, tailwind, supabase' },
+];
+
+const elsewhere = [
+  { href: 'https://github.com/paramcodes', title: 'github', desc: '70+ repos and counting' },
+  { href: 'https://x.com/Your_PARAM', title: 'x', desc: 'thoughts in short form' },
+  {
+    href: 'https://www.linkedin.com/in/paramveer-singh-2b619a296/',
+    title: 'linkedin',
+    desc: 'the formal version',
+  },
+  { href: 'mailto:sparamveer1001@gmail.com', title: 'email', desc: '< 24h reply time' },
+];
+---
+
+<Base title="about — param" description="Paramveer Singh — backend-first, agent-minded engineer in Durgapur, India.">
+  <section class="container page-head">
+    <h1 class="page-title">about.</h1>
+    <p class="page-support">
+      Backend-first engineer, agent-minded builder. I care about the unglamorous parts done right:
+      provenance, evals, observability, infra as code.
+    </p>
+  </section>
+
+  <section class="container about-section">
+    <hr class="section-rule" />
+    <p class="section-label">proof of work</p>
+    <div class="index-list">
+      {
+        proof.map((row) => (
+          <div class="index-row about-row">
+            <span class="index-row-title">{row.title}</span>
+            <span class="index-row-desc">{row.desc}</span>
+            <span class="index-row-meta">{row.meta}</span>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="container about-section">
+    <hr class="section-rule" />
+    <p class="section-label">services</p>
+    <div class="index-list">
+      {
+        services.map((row) => (
+          <div class="index-row about-row">
+            <span class="index-row-title">{row.title}</span>
+            <span class="index-row-desc">{row.desc}</span>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="container about-section">
+    <hr class="section-rule" />
+    <p class="section-label">elsewhere</p>
+    <div class="index-list">
+      {
+        elsewhere.map((row) => (
+          <a class="index-row pressable" href={row.href}>
+            <span class="index-row-title">{row.title}</span>
+            <span class="index-row-desc">{row.desc}</span>
+          </a>
+        ))
+      }
+    </div>
+  </section>
+</Base>
+
+<style>
+  .page-head {
+    padding-top: 4.5rem;
+  }
+
+  .page-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+
+  .page-support {
+    margin-top: 1rem;
+    color: var(--muted);
+    max-width: 52ch;
+  }
+
+  .about-section {
+    margin-top: 2.2rem;
+  }
+
+  .index-list {
+    margin-top: 0.5rem;
+  }
+
+  .about-row {
+    cursor: default;
+  }
+</style>

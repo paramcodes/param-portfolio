@@ -1,0 +1,64 @@
+---
+import Base from '../../layouts/Base.astro';
+import WorkRow from '../../components/WorkRow.astro';
+import { getCollection } from 'astro:content';
+
+const all = (await getCollection('work')).sort(
+  (a, b) => b.data.year - a.data.year || a.data.order - b.data.order,
+);
+
+const years = [...new Set(all.map((entry) => entry.data.year))];
+---
+
+<Base title="work — param" description="The full archive: agent systems, RAG pipelines, infra and full-stack apps.">
+  <section class="container page-head">
+    <h1 class="page-title">work, the archive.</h1>
+    <p class="page-support">Everything worth showing, newest first &#8212; {all.length} projects. The four on the home page are where to start.</p>
+  </section>
+
+  {
+    years.map((year) => (
+      <section class="container year-section">
+        <hr class="section-rule" />
+        <p class="section-label">{year}</p>
+        <div class="index-list">
+          {all.filter((entry) => entry.data.year === year).map((entry) => (
+            <WorkRow
+              href={`/work/${entry.id}/`}
+              title={entry.data.title.toLowerCase()}
+              desc={entry.data.summary}
+              meta={entry.data.tags.slice(0, 2).join(', ')}
+              vtName={`work-${entry.id}`}
+            />
+          ))}
+        </div>
+      </section>
+    ))
+  }
+</Base>
+
+<style>
+  .page-head {
+    padding-top: 4.5rem;
+  }
+
+  .page-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+
+  .page-support {
+    margin-top: 1rem;
+    color: var(--muted);
+    max-width: 52ch;
+  }
+
+  .year-section {
+    margin-top: 2.2rem;
+  }
+
+  .index-list {
+    margin-top: 0.5rem;
+  }
+</style>

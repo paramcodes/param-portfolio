@@ -1,0 +1,65 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const entries = await getCollection('writing');
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const { title, description, pubDate } = entry.data;
+const fmt = pubDate.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+---
+
+<Base title={`${title} — param`} description={description}>
+  <article class="container detail">
+    <header>
+      <p class="back mono"><a class="text-link" href="/writing/">all writing</a></p>
+      <h1 class="detail-title">{title.toLowerCase()}</h1>
+      <p class="detail-meta mono">{fmt}</p>
+    </header>
+    <hr class="section-rule" />
+    <div class="prose detail-body">
+      <Content />
+    </div>
+  </article>
+</Base>
+
+<style>
+  .detail {
+    padding-top: 4.5rem;
+  }
+
+  .back {
+    font-size: 0.7813rem;
+  }
+
+  .detail-title {
+    margin-top: 1.4rem;
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+    max-width: 24ch;
+  }
+
+  .detail-meta {
+    margin-top: 1.1rem;
+    font-size: 0.7813rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+  }
+
+  .section-rule {
+    margin-top: 2.2rem;
+  }
+
+  .detail-body {
+    margin-top: 2rem;
+    padding-bottom: 3rem;
+  }
+</style>

@@ -1,0 +1,100 @@
+---
+// Theme toggle: circular view-transition wipe from the button, instant when
+// reduced motion is preferred. One soft click sound, gesture-unlocked,
+// skipped entirely for reduced motion (interface-sfx rules).
+---
+
+<button
+  class="theme-toggle pressable"
+  type="button"
+  data-theme-toggle
+  aria-label="Toggle color theme"
+>
+  <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+  </svg>
+  <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+    <circle cx="12" cy="12" r="4.5" />
+    <path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8" />
+  </svg>
+</button>
+
+<style>
+  .theme-toggle {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 1px solid var(--pill-border);
+    border-radius: 999px;
+    color: var(--text);
+  }
+
+  :global([data-theme='dark']) .icon-sun { display: none; }
+  :global([data-theme='dark']) .icon-moon { display: block; }
+  :global([data-theme='light']) .icon-moon { display: none; }
+  :global([data-theme='light']) .icon-sun { display: block; }
+</style>
+
+<script>
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // audio: one tiny synthesized tick, unlocked by this very gesture
+  let audioCtx: AudioContext | null = null;
+
+  function playClick() {
+    if (reduced) return;
+    try {
+      audioCtx ??= new AudioContext();
+      if (audioCtx.state !== 'running') return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 540;
+      const now = audioCtx.currentTime;
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.07, now + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+      osc.connect(gain).connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } catch {
+      /* audio is optional */
+    }
+  }
+
+  function applyTheme(theme: string) {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('theme', theme);
+  }
+
+  document.querySelector('[data-theme-toggle]')?.addEventListener('click', (event) => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    const el = event.currentTarget as HTMLElement;
+
+    if (reduced || !document.startViewTransition) {
+      applyTheme(next);
+      playClick();
+      return;
+    }
+
+    const x = el.getBoundingClientRect().left + el.clientWidth / 2;
+    const y = el.getBoundingClientRect().top + el.clientHeight / 2;
+    const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+
+    const transition = document.startViewTransition(() => applyTheme(next));
+    transition.ready.then(() => {
+      document.documentElement.animate(
+        {
+          clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`],
+        },
+        {
+          duration: 420,
+          easing: 'cubic-bezier(0.23, 1, 0.32, 1)',
+          pseudoElement: '::view-transition-new(root)',
+        },
+      );
+    });
+    playClick();
+  });
+</script>

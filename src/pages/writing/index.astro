@@ -1,0 +1,61 @@
+---
+import Base from '../../layouts/Base.astro';
+import WorkRow from '../../components/WorkRow.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('writing'))
+  .filter((post) => !post.data.draft)
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const fmt = (date: Date) =>
+  date.toLocaleDateString('en-GB', { month: 'short', year: 'numeric' }).toLowerCase();
+---
+
+<Base title="writing — param" description="Notes on RAG in production, agent engineering, and shipping with contributors.">
+  <section class="container page-head">
+    <h1 class="page-title">writing.</h1>
+    <p class="page-support">Field notes from shipping &#8212; the things I wish someone had written down before I hit them.</p>
+  </section>
+
+  <section class="container list-section">
+    <hr class="section-rule" />
+    <div class="index-list">
+      {
+        posts.map((post) => (
+          <WorkRow
+            href={`/writing/${post.id}/`}
+            title={post.data.title.toLowerCase()}
+            desc={post.data.description}
+            meta={fmt(post.data.pubDate)}
+          />
+        ))
+      }
+    </div>
+  </section>
+</Base>
+
+<style>
+  .page-head {
+    padding-top: 4.5rem;
+  }
+
+  .page-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+
+  .page-support {
+    margin-top: 1rem;
+    color: var(--muted);
+    max-width: 52ch;
+  }
+
+  .list-section {
+    margin-top: 2.2rem;
+  }
+
+  .index-list {
+    margin-top: 0.5rem;
+  }
+</style>
